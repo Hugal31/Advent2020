@@ -51,3 +51,28 @@ mod tests {
         assert_eq!(solve2(&NUMBERS).unwrap(), 241861950);
     }
 }
+
+#[cfg(all(test, feature = "nightly"))]
+mod benchmarks {
+    use test::{black_box, Bencher};
+
+    use super::{solve1, solve2};
+    use crate::{read_file, utils};
+
+    fn get_input() -> Vec<u32> {
+        let s = read_file(1).unwrap();
+        utils::parse_space_separated_list(&s).unwrap()
+    }
+
+    #[bench]
+    fn bench_solve1(bench: &mut Bencher) {
+        let input = get_input();
+        bench.iter(|| solve1(black_box(&input)));
+    }
+
+    #[bench]
+    fn bench_solve2(bench: &mut Bencher) {
+        let input = get_input();
+        bench.iter(|| solve2(black_box(&input)));
+    }
+}
