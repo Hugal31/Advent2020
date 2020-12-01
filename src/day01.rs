@@ -6,73 +6,50 @@ use crate::{utils, Challenge};
 pub struct Day01;
 
 impl Challenge for Day01 {
-    fn solve1(&self, content: &str) -> Result<String> {
-        let content = utils::parse_space_separated_list(content)?;
-        solve1(&content).map(|r| format!("{}", r))
+    const DAY_NUMBER: u32 = 1;
+
+    type InputType = Vec<u32>;
+    type OutputType = u32;
+
+    fn part1(input: &Self::InputType) -> Result<Self::OutputType> {
+        find_combination(input, 2)
     }
 
-    fn solve2(&self, content: &str) -> Result<String> {
-        let content = utils::parse_space_separated_list(content)?;
-        solve2(&content).map(|r| format!("{}", r))
+    fn part2(input: &Self::InputType) -> Result<Self::OutputType> {
+        find_combination(input, 3)
     }
-}
 
-pub fn solve1(numbers: &[u32]) -> Result<u32> {
-    find_combination(&numbers, 2)
-}
-
-pub fn solve2(numbers: &[u32]) -> Result<u32> {
-    find_combination(&numbers, 3)
+    fn parse(content: &str) -> Result<Self::InputType> {
+        utils::parse_space_separated_list(content).map_err(Into::into)
+    }
 }
 
 fn find_combination(numbers: &[u32], size: usize) -> Result<u32> {
     for comb in numbers.iter().combinations(size) {
         if comb.iter().copied().sum::<u32>() == 2020 {
-            return Ok(comb.iter().fold(1, |a, &&b| a * b));
+            return Ok(comb.iter().copied().product());
         }
     }
 
-    return Err(anyhow!("Could not find combination"));
+    Err(anyhow!("Could not find combination"))
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{solve1, solve2};
+    use super::Day01;
+    use crate::Challenge as _;
 
     static NUMBERS: &[u32] = &[1721, 979, 366, 299, 675, 1456];
 
     #[test]
-    fn test_solve1() {
-        assert_eq!(solve1(&NUMBERS).unwrap(), 514579);
+    fn test_part1() {
+        assert_eq!(Day01::part1(&NUMBERS.to_owned()).unwrap(), 514579);
     }
 
     #[test]
     fn test_solve2() {
-        assert_eq!(solve2(&NUMBERS).unwrap(), 241861950);
+        assert_eq!(Day01::part2(&NUMBERS.to_owned()).unwrap(), 241861950);
     }
 }
 
-#[cfg(all(test, feature = "nightly"))]
-mod benchmarks {
-    use test::{black_box, Bencher};
-
-    use super::{solve1, solve2};
-    use crate::{read_file, utils};
-
-    fn get_input() -> Vec<u32> {
-        let s = read_file(1).unwrap();
-        utils::parse_space_separated_list(&s).unwrap()
-    }
-
-    #[bench]
-    fn bench_solve1(bench: &mut Bencher) {
-        let input = get_input();
-        bench.iter(|| solve1(black_box(&input)));
-    }
-
-    #[bench]
-    fn bench_solve2(bench: &mut Bencher) {
-        let input = get_input();
-        bench.iter(|| solve2(black_box(&input)));
-    }
-}
+crate::benchmark_challenge!(crate::day01::Day01);

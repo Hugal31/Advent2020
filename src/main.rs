@@ -24,7 +24,7 @@ fn main() -> Result<()> {
         .arg(clap::Arg::with_name("bench").short("b").long("bench"))
         .get_matches();
 
-    let day = value_t!(matches, "day", u32).unwrap_or(get_today_day());
+    let day = value_t!(matches, "day", u32).unwrap_or_else(|_| get_today_day());
     let do_bench = matches.is_present("bench");
 
     if do_bench {
