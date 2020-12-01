@@ -14,14 +14,14 @@ fn get_today_day() -> u32 {
 fn main() -> Result<()> {
     let matches = clap::App::new("Advent 2020")
         .author("Hugo Laloge")
-        .arg(clap::Arg::with_name("day")
-             .short("d")
-             .long("day")
-             .value_name("DAY")
-             .takes_value(true))
-        .arg(clap::Arg::with_name("bench")
-             .short("b")
-             .long("bench"))
+        .arg(
+            clap::Arg::with_name("day")
+                .short("d")
+                .long("day")
+                .value_name("DAY")
+                .takes_value(true),
+        )
+        .arg(clap::Arg::with_name("bench").short("b").long("bench"))
         .get_matches();
 
     let day = value_t!(matches, "day", u32).unwrap_or(get_today_day());

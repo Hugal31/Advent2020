@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use itertools::Itertools as _;
 
-use crate::{Challenge, utils};
+use crate::{utils, Challenge};
 
 pub struct Day01;
 
@@ -28,7 +28,7 @@ pub fn solve2(numbers: &[u32]) -> Result<u32> {
 fn find_combination(numbers: &[u32], size: usize) -> Result<u32> {
     for comb in numbers.iter().combinations(size) {
         if comb.iter().copied().sum::<u32>() == 2020 {
-            return Ok(comb.iter().fold(1, |a, &&b| { a * b }));
+            return Ok(comb.iter().fold(1, |a, &&b| a * b));
         }
     }
 
