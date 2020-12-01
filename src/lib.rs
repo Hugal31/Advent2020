@@ -13,15 +13,35 @@ static SOLVERS: &[(SolveFn, SolveFn)] = &[
 ];
 
 pub fn solve(day: u32, part: u8) -> Result<String> {
-    let content = read_file(day)?;
-
     let solvers = SOLVERS.get(day as usize - 1).context("day out of range")?;
+
+    let content = read_file(day)?;
 
     match part {
         1 => solvers.0(&content),
         2 => solvers.1(&content),
         _ => panic!("Part must be 1 or 2, not {}", part),
     }
+}
+
+pub fn bench(day: u32, part: u8) -> Result<()> {
+    let solvers = SOLVERS.get(day as usize - 1).context("day out of range")?;
+
+    let content = read_file(day)?;
+
+    match part {
+        1 => bench_part("Part 1", solvers.0, &content),
+        2 => bench_part("Part 2", solvers.1, &content),
+        _ => panic!("Part must be 1 or 2, not {}", part),
+    }
+}
+
+fn bench_part(name: &str, part: SolveFn, content: &str) -> Result<()> {
+    let start = std::time::Instant::now();
+    (part)(content).map(|_| ())?;
+    let elapsed = start.elapsed();
+    println!("{}: {:?}", name, elapsed);
+    Ok(())
 }
 
 fn read_file(day: u32) -> Result<String> {
