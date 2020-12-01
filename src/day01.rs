@@ -12,25 +12,28 @@ impl Challenge for Day01 {
     type OutputType = u32;
 
     fn part1(input: &Self::InputType) -> Result<Self::OutputType> {
-        find_combination(input, 2)
+        input
+            .into_iter()
+            .copied()
+            .tuple_combinations()
+            .find(|(a, b)| a + b == 2020)
+            .map(|(a, b)| a * b)
+            .ok_or_else(|| anyhow!("Could not find combination"))
     }
 
     fn part2(input: &Self::InputType) -> Result<Self::OutputType> {
-        find_combination(input, 3)
+        input
+            .into_iter()
+            .copied()
+            .tuple_combinations()
+            .find(|(a, b, c)| a + b + c == 2020)
+            .map(|(a, b, c)| a * b * c)
+            .ok_or_else(|| anyhow!("Could not find combination"))
     }
 
     fn parse(content: &str) -> Result<Self::InputType> {
         utils::parse_line_separated_list(content).map_err(Into::into)
     }
-}
-
-fn find_combination(numbers: &[u32], size: usize) -> Result<u32> {
-    numbers
-        .iter()
-        .combinations(size)
-        .find(|comb| comb.iter().copied().sum::<u32>() == 2020)
-        .map(|comb| comb.iter().copied().product())
-        .ok_or_else(|| anyhow!("Could not find combination"))
 }
 
 #[cfg(test)]
