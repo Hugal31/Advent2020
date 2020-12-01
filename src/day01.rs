@@ -1,20 +1,28 @@
 use anyhow::{anyhow, Result};
 use itertools::Itertools as _;
 
-use crate::utils;
+use crate::{Challenge, utils};
 
-pub fn solve1(content: &str) -> Result<String> {
-    let numbers: Vec<u32> = utils::parse_space_separated_list(content)?;
+pub struct Day01;
 
-    find_combination(&numbers, 2)
-        .map(|n| format!("{}", n))
+impl Challenge for Day01 {
+    fn solve1(&self, content: &str) -> Result<String> {
+        let content = utils::parse_space_separated_list(content)?;
+        solve1(&content).map(|r| format!("{}", r))
+    }
+
+    fn solve2(&self, content: &str) -> Result<String> {
+        let content = utils::parse_space_separated_list(content)?;
+        solve2(&content).map(|r| format!("{}", r))
+    }
 }
 
-pub fn solve2(content: &str) -> Result<String> {
-    let numbers: Vec<u32> = utils::parse_space_separated_list(content)?;
+pub fn solve1(numbers: &[u32]) -> Result<u32> {
+    find_combination(&numbers, 2)
+}
 
+pub fn solve2(numbers: &[u32]) -> Result<u32> {
     find_combination(&numbers, 3)
-        .map(|n| format!("{}", n))
 }
 
 fn find_combination(numbers: &[u32], size: usize) -> Result<u32> {
@@ -25,4 +33,21 @@ fn find_combination(numbers: &[u32], size: usize) -> Result<u32> {
     }
 
     return Err(anyhow!("Could not find combination"));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{solve1, solve2};
+
+    static NUMBERS: &[u32] = &[1721, 979, 366, 299, 675, 1456];
+
+    #[test]
+    fn test_solve1() {
+        assert_eq!(solve1(&NUMBERS).unwrap(), 514579);
+    }
+
+    #[test]
+    fn test_solve2() {
+        assert_eq!(solve2(&NUMBERS).unwrap(), 241861950);
+    }
 }
