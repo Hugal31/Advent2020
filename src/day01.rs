@@ -20,18 +20,17 @@ impl Challenge for Day01 {
     }
 
     fn parse(content: &str) -> Result<Self::InputType> {
-        utils::parse_space_separated_list(content).map_err(Into::into)
+        utils::parse_line_separated_list(content).map_err(Into::into)
     }
 }
 
 fn find_combination(numbers: &[u32], size: usize) -> Result<u32> {
-    for comb in numbers.iter().combinations(size) {
-        if comb.iter().copied().sum::<u32>() == 2020 {
-            return Ok(comb.iter().copied().product());
-        }
-    }
-
-    Err(anyhow!("Could not find combination"))
+    numbers
+        .iter()
+        .combinations(size)
+        .find(|comb| comb.iter().copied().sum::<u32>() == 2020)
+        .map(|comb| comb.iter().copied().product())
+        .ok_or_else(|| anyhow!("Could not find combination"))
 }
 
 #[cfg(test)]
