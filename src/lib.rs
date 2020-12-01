@@ -101,6 +101,10 @@ mod benchmarks {
     use super::Challenge;
     use crate::read_file;
 
+    /// Benchmark a part of a challenge:
+    /// - Read the file in inputs/XX.txt (according to read_file)
+    /// - Parse it once with C::parse
+    /// - Run partX (dependending on the part parameter) on the parsed input N times in the bencher.
     pub fn bench_challenge<C: Challenge>(bencher: &mut Bencher, part: u32) {
         let content = read_file(C::DAY_NUMBER).expect("Should be able to read input file");
         let input = C::parse(&content).expect("Should parse content");
@@ -113,6 +117,7 @@ mod benchmarks {
     }
 }
 
+/// Add benchmarks for a challenge: call benchmarks::bench_challenge for both parts.
 #[macro_export]
 macro_rules! benchmark_challenge {
     ($challenge:ty) => {
@@ -120,7 +125,7 @@ macro_rules! benchmark_challenge {
         mod benchmarks {
             use test::Bencher;
 
-            use crate::benchmarks::bench_challenge;
+            use $crate::benchmarks::bench_challenge;
 
             #[bench]
             fn bench_solve1(bench: &mut Bencher) {
