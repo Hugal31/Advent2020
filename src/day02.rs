@@ -44,20 +44,15 @@ impl PasswordEntry {
     }
 
     pub fn is_valid_positions(&self) -> bool {
-        let pos_1 = self
-            .password
-            .chars()
-            .nth(self.policy.range.0 - 1)
-            .map(|c| c == self.policy.letter)
-            .unwrap_or(false);
-        let pos_2 = self
-            .password
-            .chars()
-            .nth(self.policy.range.1 - 1)
-            .map(|c| c == self.policy.letter)
-            .unwrap_or(false);
+        let is_char_at_pos = |pos: usize| {
+            self.password
+                .chars()
+                .nth(pos)
+                .map(|c| c == self.policy.letter)
+                .unwrap_or(false)
+        };
 
-        pos_1 ^ pos_2
+        is_char_at_pos(self.policy.range.0 - 1) ^ is_char_at_pos(self.policy.range.1 - 1)
     }
 }
 
