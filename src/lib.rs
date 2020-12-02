@@ -4,6 +4,7 @@
 extern crate test;
 
 mod day01;
+mod day02;
 mod utils;
 
 use std::fmt::Display;
@@ -21,6 +22,14 @@ pub trait Challenge {
     fn part1(input: &Self::InputType) -> Result<Self::OutputType>;
     fn part2(input: &Self::InputType) -> Result<Self::OutputType>;
     fn parse(content: &str) -> Result<Self::InputType>;
+
+    fn solve1(content: &str) -> Result<Self::OutputType> {
+        Self::part1(&Self::parse(content)?)
+    }
+
+    fn solve2(content: &str) -> Result<Self::OutputType> {
+        Self::part2(&Self::parse(content)?)
+    }
 }
 
 trait ChallengeSolver {
@@ -32,17 +41,16 @@ struct ChallengeImpl<C: Challenge>(C);
 
 impl<C: Challenge> ChallengeSolver for ChallengeImpl<C> {
     fn solve1(&self, content: &str) -> Result<String> {
-        let input = C::parse(content)?;
-        Ok(format!("{}", C::part1(&input)?))
+        Ok(format!("{}", C::solve1(content)?))
     }
 
     fn solve2(&self, content: &str) -> Result<String> {
-        let input = C::parse(content)?;
-        Ok(format!("{}", C::part2(&input)?))
+        Ok(format!("{}", C::solve2(content)?))
     }
 }
 
-static CHALLENGES: &[&(dyn ChallengeSolver + Sync + Send)] = &[&ChallengeImpl(day01::Day01)];
+static CHALLENGES: &[&(dyn ChallengeSolver + Sync + Send)] =
+    &[&ChallengeImpl(day01::Day01), &ChallengeImpl(day02::Day02)];
 
 pub fn solve(day: u32, part: u8) -> Result<String> {
     let solvers = CHALLENGES
