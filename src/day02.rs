@@ -1,9 +1,9 @@
 use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
+use scan_fmt::{scan_fmt, scan_fmt_some};
 
 use crate::{utils, Challenge};
-use itertools::Itertools;
 
 pub struct Day02;
 
@@ -65,14 +65,9 @@ impl FromStr for PasswordEntry {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (policy_str, password_str): (&str, &str) = s
-            .split(':')
-            .map(str::trim)
-            .collect_tuple()
-            .ok_or_else(|| anyhow!("Invalid password entry"))?;
-
-        let password = password_str.to_owned();
-        let policy = policy_str.parse()?;
+        let (policy, password) = scan_fmt_some!(s, "{[^:]}: {}", PasswordPolicy, String);
+        let policy = policy.ok_or_else(|| anyhow!("Could not parse policy"))?;
+        let password = password.ok_or_else(|| anyhow!("Could not parse password"))?;
 
         Ok(PasswordEntry { password, policy })
     }
@@ -88,34 +83,18 @@ impl FromStr for PasswordPolicy {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        let (range_str, letter_str) = s
-            .split(' ')
-            .collect_tuple()
-            .ok_or_else(|| anyhow!("Invalid policy"))?;
+        let (range_beg, range_end, letter) = scan_fmt!(s, "{}-{} {}", usize, usize, char)?;
 
-        let range_res: (
-            Result<usize, std::num::ParseIntError>,
-            Result<usize, std::num::ParseIntError>,
-        ) = range_str
-            .split('-')
-            .map(str::parse)
-            .collect_tuple()
-            .ok_or_else(|| anyhow!("Could not parse range."))?;
-        let range = (range_res.0?, range_res.1?);
-
-        if !letter_str.len() == 1 {
-            return Err(anyhow!("The letter must be of length 1"));
-        }
-        let letter = letter_str.chars().next().unwrap();
-
-        Ok(PasswordPolicy { letter, range })
+        Ok(PasswordPolicy {
+            letter,
+            range: (range_beg, range_end),
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Challenge as _;
 
     #[test]
     fn test_parse_policy() {
@@ -156,7 +135,7 @@ mod tests {
     }
 
     #[test]
-    fn test_solve2() {
+    fn test_part2() {
         assert_eq!(
             Day02::solve2(
                 "1-3 a: abcde

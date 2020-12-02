@@ -26,7 +26,6 @@ impl Challenge for DayXX {
 #[cfg(test)]
 mod tests {
     use super::DayXX;
-    use crate::Challenge as _;
 
     #[test]
     fn test_part1() {
@@ -34,7 +33,7 @@ mod tests {
     }
 
     #[test]
-    fn test_solve2() {
+    fn test_part2() {
         unimplemented!()
     }
 }
