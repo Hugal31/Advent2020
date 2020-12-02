@@ -13,7 +13,7 @@ impl Challenge for Day01 {
 
     fn part1(input: &Self::InputType) -> Result<Self::OutputType> {
         input
-            .into_iter()
+            .iter()
             .copied()
             .tuple_combinations()
             .find(|(a, b)| a + b == 2020)
@@ -23,7 +23,7 @@ impl Challenge for Day01 {
 
     fn part2(input: &Self::InputType) -> Result<Self::OutputType> {
         input
-            .into_iter()
+            .iter()
             .copied()
             .tuple_combinations()
             .find(|(a, b, c)| a + b + c == 2020)

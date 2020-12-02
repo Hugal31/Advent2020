@@ -8,7 +8,7 @@ use itertools::Itertools;
 pub struct Day02;
 
 impl Challenge for Day02 {
-    const DAY_NUMBER: u32 = 02;
+    const DAY_NUMBER: u32 = 2;
 
     type InputType = Vec<PasswordEntry>;
     type OutputType = usize;
@@ -22,7 +22,7 @@ impl Challenge for Day02 {
     }
 
     fn parse(content: &str) -> Result<Self::InputType> {
-        utils::parse_line_separated_list(content).into()
+        utils::parse_line_separated_list(content)
     }
 }
 
@@ -69,7 +69,7 @@ impl FromStr for PasswordEntry {
             .split(':')
             .map(str::trim)
             .collect_tuple()
-            .ok_or(anyhow!("Invalid password entry"))?;
+            .ok_or_else(|| anyhow!("Invalid password entry"))?;
 
         let password = password_str.to_owned();
         let policy = policy_str.parse()?;
@@ -91,7 +91,7 @@ impl FromStr for PasswordPolicy {
         let (range_str, letter_str) = s
             .split(' ')
             .collect_tuple()
-            .ok_or(anyhow!("Invalid policy"))?;
+            .ok_or_else(|| anyhow!("Invalid policy"))?;
 
         let range_res: (
             Result<usize, std::num::ParseIntError>,
@@ -100,13 +100,13 @@ impl FromStr for PasswordPolicy {
             .split('-')
             .map(str::parse)
             .collect_tuple()
-            .ok_or(anyhow!("Could not parse range."))?;
+            .ok_or_else(|| anyhow!("Could not parse range."))?;
         let range = (range_res.0?, range_res.1?);
 
         if !letter_str.len() == 1 {
             return Err(anyhow!("The letter must be of length 1"));
         }
-        let letter = letter_str.chars().nth(0).unwrap();
+        let letter = letter_str.chars().next().unwrap();
 
         Ok(PasswordPolicy { letter, range })
     }
