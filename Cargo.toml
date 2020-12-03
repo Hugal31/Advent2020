@@ -10,6 +10,7 @@ edition = "2018"
 anyhow = "1.0"
 chrono = "0.4"
 clap = "2.0"
+grid = "0.2"
 itertools = "0.9"
 scan_fmt = "0.2"
 

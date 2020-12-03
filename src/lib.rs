@@ -5,6 +5,7 @@ extern crate test;
 
 mod day01;
 mod day02;
+mod day03;
 mod utils;
 
 use std::fmt::Display;
@@ -49,8 +50,11 @@ impl<C: Challenge> ChallengeSolver for ChallengeImpl<C> {
     }
 }
 
-static CHALLENGES: &[&(dyn ChallengeSolver + Sync + Send)] =
-    &[&ChallengeImpl(day01::Day01), &ChallengeImpl(day02::Day02)];
+static CHALLENGES: &[&(dyn ChallengeSolver + Sync + Send)] = &[
+    &ChallengeImpl(day01::Day01),
+    &ChallengeImpl(day02::Day02),
+    &ChallengeImpl(day03::Day03),
+];
 
 pub fn solve(day: u32, part: u8) -> Result<String> {
     let solvers = CHALLENGES
