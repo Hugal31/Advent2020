@@ -49,36 +49,31 @@ fn parse_entry(entry: &str) -> Result<Passport> {
 fn has_required_fields(entry: &Passport) -> bool {
     REQUIRED_FIELDS
         .iter()
-        .all(|field| entry.contains_key(&field.to_string())) // TODO I should be able to use a &str
+        .all(|field| entry.contains_key::<str>(field))
 }
 
 fn passport_is_valid(passport: &Passport) -> bool {
-    if !has_required_fields(passport) {
-        return false;
-    }
-
-    let byr = &passport["byr"];
-    let iyr = &passport["iyr"];
-    let eyr = &passport["eyr"];
-    let hgt = &passport["hgt"];
-    let hcl = &passport["hcl"];
-    let ecl = &passport["ecl"];
-    let pid = &passport["pid"];
-
-    let byr_valid = date_between(byr, 1920, 2002);
-    let iyr_valid = date_between(iyr, 2010, 2020);
-    let eyr_valid = date_between(eyr, 2020, 2030);
-    let hgt_valid = validate_height(hgt);
-    let hcl_valid = hcl.starts_with('#')
-        && hcl.len() == 7
-        && (&hcl[1..]).chars().all(|c| "0123456789abcdef".contains(c));
-    let ecl_valid = VALID_EYES_COLORS.iter().any(|c| c == ecl);
-    let pid_valid = pid.len() == 9 && pid.chars().all(char::is_numeric);
-
-    byr_valid && iyr_valid && eyr_valid && hgt_valid && hcl_valid && ecl_valid && pid_valid
+    has_required_fields(passport)
+        && passport
+            .iter()
+            .all(|(field, value)| validate_field(field, value))
 }
 
-fn date_between(s: &str, after: u32, before: u32) -> bool {
+fn validate_field(field: &str, value: &str) -> bool {
+    match field {
+        "byr" => is_date_between(value, 1920, 2002),
+        "iyr" => is_date_between(value, 2010, 2020),
+        "eyr" => is_date_between(value, 2020, 2030),
+        "hgt" => validate_height(value),
+        "hcl" => validate_hair_color(value),
+        "ecl" => VALID_EYES_COLORS.contains(&value),
+        "pid" => validate_pid(value),
+        "cid" => true,
+        _ => false,
+    }
+}
+
+fn is_date_between(s: &str, after: u32, before: u32) -> bool {
     let date = s.parse().unwrap_or(0);
     s.len() == 4 && s.chars().all(char::is_numeric) && date >= after && date <= before
 }
@@ -96,6 +91,18 @@ fn validate_height(s: &str) -> bool {
     } else {
         (59..=76).contains(&height)
     }
+}
+
+fn validate_hair_color(color: &str) -> bool {
+    color.starts_with('#')
+        && color.len() == 7
+        && (&color[1..])
+            .chars()
+            .all(|c| "0123456789abcdef".contains(c))
+}
+
+fn validate_pid(pid: &str) -> bool {
+    pid.len() == 9 && pid.chars().all(char::is_numeric)
 }
 
 const REQUIRED_FIELDS: &[&str] = &["byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"];
