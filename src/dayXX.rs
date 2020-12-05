@@ -25,7 +25,7 @@ impl Challenge for DayXX {
 
 #[cfg(test)]
 mod tests {
-    use super::DayXX;
+    use super::*;
 
     #[test]
     fn test_part1() {

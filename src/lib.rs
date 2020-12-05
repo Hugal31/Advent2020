@@ -7,6 +7,7 @@ mod day01;
 mod day02;
 mod day03;
 mod day04;
+mod day05;
 mod utils;
 
 use std::fmt::Display;
@@ -56,6 +57,7 @@ static CHALLENGES: &[&(dyn ChallengeSolver + Sync + Send)] = &[
     &ChallengeImpl(day02::Day02),
     &ChallengeImpl(day03::Day03),
     &ChallengeImpl(day04::Day04),
+    &ChallengeImpl(day05::Day05),
 ];
 
 pub fn solve(day: u32, part: u8) -> Result<String> {
