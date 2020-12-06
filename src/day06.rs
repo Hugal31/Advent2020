@@ -1,39 +1,26 @@
 use anyhow::Result;
 
 use crate::Challenge;
-use std::collections::HashSet;
 
 pub struct Day06;
 
 impl Challenge for Day06 {
     const DAY_NUMBER: u32 = 6;
 
-    type InputType = Vec<Vec<HashSet<char>>>;
-    type OutputType = usize;
+    type InputType = Vec<Vec<u32>>;
+    type OutputType = u32;
 
     fn part1(input: &Self::InputType) -> Result<Self::OutputType> {
         Ok(input
             .iter()
-            .map(|group| {
-                group[1..]
-                    .iter()
-                    .fold(group[0].clone(), |s, p| s.union(p).copied().collect())
-                    .len()
-            })
+            .map(|group| group[1..].iter().fold(group[0], |s, p| s | p).count_ones())
             .sum())
     }
 
     fn part2(input: &Self::InputType) -> Result<Self::OutputType> {
         Ok(input
             .iter()
-            .map(|group| {
-                group[1..]
-                    .iter()
-                    .fold(group[0].clone(), |s, p| {
-                        s.intersection(p).copied().collect()
-                    })
-                    .len()
-            })
+            .map(|group| group[1..].iter().fold(group[0], |s, p| s & p).count_ones())
             .sum())
     }
 
@@ -43,7 +30,7 @@ impl Challenge for Day06 {
             .map(|group| {
                 group
                     .lines()
-                    .map(|person| person.chars().collect())
+                    .map(|person| person.bytes().fold(0, |b, c| b | (1 << (c - b'a'))))
                     .collect()
             })
             .collect())
@@ -66,7 +53,8 @@ ab",
 
         assert_eq!(groups.len(), 2);
         assert_eq!(groups[0].len(), 2);
-        assert!(groups[0][0].contains(&'a'));
+        assert_eq!(groups[0][0], 0b111);
+        assert_eq!(groups[0][1], 0b11100);
     }
 
     const EXAMPLE: &str = "abc
