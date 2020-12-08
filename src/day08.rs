@@ -26,13 +26,54 @@ impl Challenge for Day08 {
         Ok(ae.acc())
     }
 
+    // Naive brute-force solution
     fn part2(input: &Self::InputType) -> Result<Self::OutputType> {
-        unimplemented!()
+        for (instruction_idx, _) in
+            input
+                .instructions
+                .iter()
+                .enumerate()
+                .filter(|(_, i)| match i.0 {
+                    OpCode::Nop | OpCode::Jmp => true,
+                    _ => false,
+                })
+        {
+            if let Ok(fixed_ae) = try_fix(input, instruction_idx) {
+                return Ok(fixed_ae.acc());
+            }
+        }
+
+        Err(anyhow!("Could not find corrupted instruction"))
     }
 
     fn parse(content: &str) -> Result<Self::InputType> {
         content.parse()
     }
+}
+
+fn try_fix(input: &AssemblyEmulator, instruction_idx: usize) -> Result<AssemblyEmulator> {
+    let mut fixed_ae: Vec<Instruction> = input.instructions().into();
+    let corrupted_instruction = input.instructions()[instruction_idx];
+
+    fixed_ae[instruction_idx].0 = match corrupted_instruction.0 {
+        OpCode::Nop => OpCode::Jmp,
+        OpCode::Jmp => OpCode::Nop,
+        _ => unreachable!(),
+    };
+
+    let mut fixed_ae = AssemblyEmulator::new(fixed_ae);
+    let mut encounterd_instructions = HashSet::new();
+
+    while fixed_ae.program_counter() != fixed_ae.instructions().len() {
+        if encounterd_instructions.contains(&fixed_ae.program_counter()) {
+            return Err(anyhow!("The fix doesn't work"));
+        }
+
+        encounterd_instructions.insert(fixed_ae.program_counter());
+        fixed_ae.step();
+    }
+
+    Ok(fixed_ae)
 }
 
 #[derive(Clone, Debug)]
@@ -43,6 +84,14 @@ pub struct AssemblyEmulator {
 }
 
 impl AssemblyEmulator {
+    pub fn new(instructions: Vec<Instruction>) -> Self {
+        Self {
+            acc: 0,
+            program_counter: 0,
+            instructions,
+        }
+    }
+
     pub fn acc(&self) -> i32 {
         self.acc
     }
@@ -56,6 +105,10 @@ impl AssemblyEmulator {
     }
 
     pub fn step(&mut self) {
+        if self.program_counter >= self.instructions.len() {
+            panic!("Segmentation fault in the assembly emulator.")
+        }
+
         match self.instructions[self.program_counter] {
             Instruction(OpCode::Nop, _) => self.program_counter += 1,
             Instruction(OpCode::Acc, i) => {
@@ -66,10 +119,6 @@ impl AssemblyEmulator {
                 self.program_counter = (self.program_counter as i32 + i) as usize
             }
         }
-
-        if self.program_counter >= self.instructions.len() {
-            panic!("Segmentation fault in the assembly emulator.")
-        }
     }
 }
 
@@ -77,11 +126,7 @@ impl FromStr for AssemblyEmulator {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self {
-            acc: 0,
-            program_counter: 0,
-            instructions: crate::utils::parse_line_separated_list(s)?,
-        })
+        Ok(Self::new(crate::utils::parse_line_separated_list(s)?))
     }
 }
 
@@ -148,7 +193,7 @@ acc +6";
 
     #[test]
     fn test_part2() {
-        unimplemented!()
+        assert_eq!(Day08::solve2(EXAMPLE).unwrap(), 8);
     }
 }
 
