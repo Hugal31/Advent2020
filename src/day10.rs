@@ -38,11 +38,27 @@ impl Challenge for Day10 {
     fn part2(input: &Self::InputType) -> Result<Self::OutputType> {
         let input = {
             let mut i = input.clone();
+            i.push(0);
             i.sort();
             i
         };
 
-        unimplemented!();
+        let mut combination_per_adapter = Vec::new();
+        combination_per_adapter.resize(input.len(), 1);
+
+        // -2 because we skip the last two
+        for i in (0..(input.len() - 2)).rev() {
+            let current_socket = input[i];
+            let number_of_suitable_adapters = input[i + 1..]
+                .iter()
+                .zip(&combination_per_adapter[i + 1..])
+                .take_while(|(&adapter, _)| is_suitable_for(current_socket, adapter))
+                .map(|(_, comb)| comb)
+                .sum::<u64>();
+            combination_per_adapter[i] = number_of_suitable_adapters;
+        }
+
+        Ok(combination_per_adapter[0])
     }
 
     fn parse(content: &str) -> Result<Self::InputType> {
@@ -50,8 +66,8 @@ impl Challenge for Day10 {
     }
 }
 
-fn is_suitable_for(socket: u64) -> impl Fn(u64) -> bool {
-    |adapter| adapter - socket <= 3
+fn is_suitable_for(socket: u64, adapter: u64) -> bool {
+    adapter - socket <= 3
 }
 
 #[cfg(test)]
@@ -101,6 +117,14 @@ mod tests {
 34
 10
 3";
+
+    #[test]
+    fn test_is_suitable_for() {
+        assert!(is_suitable_for(2, 3));
+        assert!(is_suitable_for(2, 4));
+        assert!(is_suitable_for(2, 5));
+        assert!(!is_suitable_for(2, 6));
+    }
 
     #[test]
     fn test_part1() {
