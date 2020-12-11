@@ -1,8 +1,10 @@
+use std::convert::TryFrom;
+
 use anyhow::{anyhow, Result};
 use grid::Grid;
 
 use crate::Challenge;
-use std::convert::TryFrom;
+use itertools::Itertools;
 
 pub struct Day11;
 
@@ -15,11 +17,13 @@ impl Challenge for Day11 {
     type OutputType = usize;
 
     fn part1(input: &Self::InputType) -> Result<Self::OutputType> {
-        unimplemented!()
+        let equilibrium = find_equilibrium(input, 4, get_occupied_neighbors);
+        Ok(count_occupied(&equilibrium))
     }
 
     fn part2(input: &Self::InputType) -> Result<Self::OutputType> {
-        unimplemented!()
+        let equilibrium = find_equilibrium(input, 5, get_visible_neighbors);
+        Ok(count_occupied(&equilibrium))
     }
 
     fn parse(content: &str) -> Result<Self::InputType> {
@@ -27,8 +31,10 @@ impl Challenge for Day11 {
             .lines()
             .next()
             .ok_or_else(|| anyhow!("Empty grid"))?
+            .trim_end()
             .len();
         let cells = content
+            .trim()
             .chars()
             .filter(|c| !c.is_whitespace())
             .map(<Cell as TryFrom<char>>::try_from)
@@ -38,35 +44,118 @@ impl Challenge for Day11 {
     }
 }
 
-fn seating_step(layout: &Layout) -> Layout {
-    // TODO
-    unimplemented!()
+fn find_equilibrium<F>(input: &Layout, max_neighbors: usize, neighbors_func: F) -> Layout
+where
+    F: Copy + Fn(&Layout, (usize, usize)) -> usize,
+{
+    let mut last_input = input.clone();
+    let mut new_input = seating_step(&last_input, max_neighbors, neighbors_func);
+
+    while last_input != new_input {
+        last_input = new_input.clone();
+        new_input = seating_step(&last_input, max_neighbors, neighbors_func);
+    }
+
+    new_input
 }
 
+fn seating_step<F>(layout: &Layout, max_neighbors: usize, neighbors_func: F) -> Layout
+where
+    F: Fn(&Layout, (usize, usize)) -> usize,
+{
+    let cells = (0..layout.rows())
+        .cartesian_product(0..layout.cols())
+        .map(|(y, x)| {
+            let cell = layout[y][x];
+            if cell != Cell::Floor {
+                new_cell_state(cell, neighbors_func(layout, (x, y)), max_neighbors)
+            } else {
+                cell
+            }
+        })
+        .collect();
+
+    Layout::from_vec(cells, layout.cols())
+}
+
+fn new_cell_state(cell: Cell, occupied_neighbors: usize, max_neighbors: usize) -> Cell {
+    match (cell, occupied_neighbors) {
+        (Cell::Empty, 0) => Cell::Occupied,
+        (Cell::Occupied, i) if i >= max_neighbors => Cell::Empty,
+        (c, _) => c,
+    }
+}
+
+const DIRS: &[(i8, i8)] = &[
+    (-1, -1),
+    (0, -1),
+    (1, -1),
+    (-1, 0),
+    (1, 0),
+    (-1, 1),
+    (0, 1),
+    (1, 1),
+];
+
 fn get_occupied_neighbors(layout: &Layout, coords: (usize, usize)) -> usize {
-    dbg!(layout.size());
+    DIRS.iter()
+        .filter_map(|&offset| filter_map_in_bounds(layout, coords, offset))
+        .filter(|&(neighbor_x, neighbor_y)| layout[neighbor_y][neighbor_x] == Cell::Occupied)
+        .count()
+}
 
-    let mut total = 0;
-    if coords.0 > 0 && layout[coords.1][coords.0 - 1] == Cell::Occupied {
-        total += 1;
-    }
-    if coords.0 + 1 < layout.size().0 && layout[coords.1][coords.0 + 1] == Cell::Occupied {
-        total += 1;
-    }
-    if coords.1 > 0 && layout[coords.1 - 1][coords.0] == Cell::Occupied {
-        total += 1;
-    }
-    if coords.1 + 1 < layout.size().1 && layout[coords.1 + 1][coords.0] == Cell::Occupied {
-        total += 1;
-    }
+fn get_visible_neighbors(layout: &Layout, coords: (usize, usize)) -> usize {
+    DIRS.iter()
+        .copied()
+        // For each direction, tries multiple of that direction to find the first visible seat.
+        .filter(|&offset| {
+            (1..)
+                // Multiply offset
+                .map(|i| (offset.0 * i, offset.1 * i))
+                // map_while offset is in bounds
+                .map(|offset| filter_map_in_bounds(layout, coords, offset))
+                .take_while(|&visible_coords| visible_coords.is_some())
+                .map(|visible_coords| visible_coords.unwrap())
+                .map(|(x, y)| layout[y][x])
+                .find(|&cell| cell != Cell::Floor)
+                == Some(Cell::Occupied)
+        })
+        .count()
+}
 
-    total
+fn filter_map_in_bounds(
+    layout: &Layout,
+    (x, y): (usize, usize),
+    (offset_x, offset_y): (i8, i8),
+) -> Option<(usize, usize)> {
+    if is_in_bounds(layout, (x, y), (offset_x, offset_y)) {
+        Some((
+            (x as i64 + offset_x as i64) as usize,
+            (y as i64 + offset_y as i64) as usize,
+        ))
+    } else {
+        None
+    }
+}
+
+fn is_in_bounds(layout: &Layout, coords: (usize, usize), offset: (i8, i8)) -> bool {
+    match (coords, offset) {
+        ((x, _), (offset_x, _)) if offset_x < 0 && (-offset_x) as usize > x => false,
+        ((_, y), (_, offset_y)) if offset_y < 0 && (-offset_y) as usize > y => false,
+        ((x, _), (offset_x, _)) if offset_x > 0 && x + offset_x as usize >= layout.cols() => false,
+        ((_, y), (_, offset_y)) if offset_y > 0 && y + offset_y as usize >= layout.rows() => false,
+        _ => true,
+    }
+}
+
+fn count_occupied(layout: &Layout) -> usize {
+    layout.iter().filter(|&&c| c == Cell::Occupied).count()
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Cell {
     Floor,
-    Unoccupied,
+    Empty,
     Occupied,
 }
 
@@ -76,7 +165,7 @@ impl TryFrom<char> for Cell {
     fn try_from(value: char) -> Result<Self, Self::Error> {
         match value {
             '.' => Ok(Cell::Floor),
-            'L' => Ok(Cell::Unoccupied),
+            'L' => Ok(Cell::Empty),
             '#' => Ok(Cell::Occupied),
             _ => Err(anyhow!("Cannot parse seat: {}", value)),
         }
@@ -105,7 +194,7 @@ L.LLLLL.LL";
 
     #[test]
     fn test_part2() {
-        unimplemented!()
+        assert_eq!(Day11::solve2(EXAMPLE).unwrap(), 26);
     }
 }
 
