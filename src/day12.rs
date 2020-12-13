@@ -16,13 +16,20 @@ impl Challenge for Day12 {
     fn part1(input: &Self::InputType) -> Result<Self::OutputType> {
         let mut state = State::default();
 
-        input.iter().for_each(|i| i.apply(&mut state));
+        input.iter().for_each(|i| i.apply_ship(&mut state));
 
         Ok(state.coords.0.abs() as u32 + state.coords.1.abs() as u32)
     }
 
     fn part2(input: &Self::InputType) -> Result<Self::OutputType> {
-        unimplemented!()
+        let mut state = State::default();
+        let mut waypoint = Waypoint(10, -1);
+
+        input
+            .iter()
+            .for_each(|i| i.apply_waypoint(&mut state, &mut waypoint));
+
+        Ok(state.coords.0.abs() as u32 + state.coords.1.abs() as u32)
     }
 
     fn parse(content: &str) -> Result<Self::InputType> {
@@ -46,13 +53,12 @@ impl Default for State {
 }
 
 impl State {
+    pub fn move_by(&mut self, offset: (i32, i32)) {
+        self.coords = (self.coords.0 + offset.0, self.coords.1 + offset.1)
+    }
+
     pub fn move_toward(&mut self, direction: Direction, amount: i32) {
-        let offset = match direction {
-            Direction::North => (0, -1),
-            Direction::South => (0, 1),
-            Direction::East => (1, 0),
-            Direction::West => (-1, 0),
-        };
+        let offset = direction.get_offset();
         self.coords.0 += offset.0 * amount;
         self.coords.1 += offset.1 * amount;
     }
@@ -63,17 +69,50 @@ impl State {
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub struct Waypoint(pub i32, pub i32);
+
+impl Waypoint {
+    pub fn move_toward(&mut self, direction: Direction, amount: i32) {
+        let offset = direction.get_offset();
+        self.0 += offset.0 * amount;
+        self.1 += offset.1 * amount;
+    }
+
+    pub fn rotate(&mut self, rotation: Rotation, amount: i32) {
+        let (rotation, amount) = normalize_rotation(rotation, amount);
+
+        *self = match (rotation, amount) {
+            (_, 0) => *self,
+            (_, 180) => Self(-self.0, -self.1),
+            (Rotation::Right, 90) => Self(-self.1, self.0),
+            (Rotation::Left, 90) => Self(self.1, -self.0),
+            _ => panic!("Unexpected rotation amount {}", amount),
+        };
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Instruction {
     typ: InstructionType,
     amount: i32,
 }
 
 impl Instruction {
-    pub fn apply(&self, state: &mut State) {
+    pub fn apply_ship(&self, state: &mut State) {
         match self.typ {
             InstructionType::Move(direction) => state.move_toward(direction, self.amount),
             InstructionType::Rotate(rotation) => state.rotate(rotation, self.amount),
             InstructionType::Forward => state.move_toward(state.orientation, self.amount),
+        }
+    }
+
+    pub fn apply_waypoint(&self, state: &mut State, waypoint: &mut Waypoint) {
+        match self.typ {
+            InstructionType::Move(direction) => waypoint.move_toward(direction, self.amount),
+            InstructionType::Rotate(rotation) => waypoint.rotate(rotation, self.amount),
+            InstructionType::Forward => {
+                state.move_by((waypoint.0 * self.amount, waypoint.1 * self.amount))
+            }
         }
     }
 }
@@ -126,23 +165,20 @@ pub enum Direction {
 }
 
 impl Direction {
-    pub fn rotated(&self, rotation: Rotation, amount: i32) -> Direction {
-        let (rotation, amount) = if amount < 0 {
-            (rotation.opposite(), amount.abs() as u32)
-        } else {
-            (rotation, amount as u32)
-        };
+    pub fn get_offset(self) -> (i32, i32) {
+        match self {
+            Direction::North => (0, -1),
+            Direction::South => (0, 1),
+            Direction::East => (1, 0),
+            Direction::West => (-1, 0),
+        }
+    }
 
-        let amount = amount % 360;
-
-        let (rotation, amount) = if amount > 180 {
-            (rotation.opposite(), 360 - amount)
-        } else {
-            (rotation, amount)
-        };
+    pub fn rotated(self, rotation: Rotation, amount: i32) -> Direction {
+        let (rotation, amount) = normalize_rotation(rotation, amount);
 
         match (self, rotation, amount) {
-            (_, _, 0) => *self,
+            (_, _, 0) => self,
             (_, _, 180) => self.opposite(),
             (Direction::West, Rotation::Right, 90) | (Direction::East, Rotation::Left, 90) => {
                 Direction::North
@@ -160,7 +196,7 @@ impl Direction {
         }
     }
 
-    pub fn opposite(&self) -> Direction {
+    pub fn opposite(self) -> Direction {
         match self {
             Direction::North => Direction::South,
             Direction::South => Direction::North,
@@ -185,11 +221,33 @@ impl Rotation {
     }
 }
 
+/// Clamp `amount` between 0 and 180 degrees, by modifying `rotation` accordingly.
+///
+/// ```ignore
+/// assert_eq!(normalize_rotation(Rotation::Left, -90), (Rotation::Right, 90));
+/// assert_eq!(normalize_rotation(Rotation::Right, 270), (Rotation::Left, 90));
+/// ```
+fn normalize_rotation(rotation: Rotation, amount: i32) -> (Rotation, u32) {
+    let (rotation, amount) = if amount < 0 {
+        (rotation.opposite(), amount.abs() as u32)
+    } else {
+        (rotation, amount as u32)
+    };
+
+    let amount = amount % 360;
+
+    if amount > 180 {
+        (rotation.opposite(), 360 - amount)
+    } else {
+        (rotation, amount)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    const EXAMPLE1: &str = "F10
+    const EXAMPLE: &str = "F10
 N3
 F7
 R90
@@ -197,12 +255,12 @@ F11";
 
     #[test]
     fn test_part1() {
-        assert_eq!(Day12::solve1(EXAMPLE1).unwrap(), 25);
+        assert_eq!(Day12::solve1(EXAMPLE).unwrap(), 25);
     }
 
     #[test]
     fn test_part2() {
-        unimplemented!()
+        assert_eq!(Day12::solve1(EXAMPLE).unwrap(), 286);
     }
 }
 
